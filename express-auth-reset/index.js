@@ -70,7 +70,7 @@ app.post('/login', async( req, res) =>{
     if (!hashed){
       return res.status(400).json({error: "Wrong Password"});
     }
-    const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '1m'});
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '30s'});
     res.json({ message: "Login successful", token:token });
   }
 
@@ -87,14 +87,20 @@ function verifyJWT(req,res,next){
   if (!token){
     return res.status(401).json({ error: 'No token provided'});
   }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) =>{
-    if (err){
-      return res.status(403).json({ error: 'Invalid token'});
+  try{
+    decoded = jwt.verify(token, process.env.JWT_SECRET)
+      // if (err){
+      //   return res.status(403).json({ error: 'Invalid token  !'});
+      // }
+      req.user = decoded;
+      next();
+  }
+  catch (err){
+    if (err.name ==='TokenExpiredError'){
+      return res.status(403).json({ error: 'Token expired'});
     }
-    req.user = user;
-    next();
-  });
+    res.status(500).json({ error: 'Failed to authenticate token'});
+  }
 }
 
 app.get('/profile', verifyJWT, (req,res) =>{
