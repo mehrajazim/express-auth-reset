@@ -26,12 +26,8 @@ app.get('/db-test', async(req,res) =>{
 })
 
 app.post('/register', async( req, res) =>{
-  try{
   const { username, email, password } = req.body;
-  }
-  catch(err){
-    return res.status(400).json({error: 'Invalid JSON'});
-  }
+
   if(!username || !email || !password){
     return res.status(400).json({error: 'Missing required fields'});
   }
