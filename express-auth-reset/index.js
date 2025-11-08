@@ -70,7 +70,7 @@ app.post('/login', async( req, res) =>{
     if (!hashed){
       return res.status(400).json({error: "Wrong Password"});
     }
-    const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '20s'});
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '1m'});
     res.json({ message: "Login successful", token:token });
   }
 
@@ -78,6 +78,27 @@ app.post('/login', async( req, res) =>{
     res.status(500).json({error: err.message + ' at login'});
   }
 
+});
+
+function verifyJWT(req,res,next){
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token){
+    return res.status(401).json({ error: 'No token provided'});
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) =>{
+    if (err){
+      return res.status(403).json({ error: 'Invalid token'});
+    }
+    req.user = user;
+    next();
+  });
+}
+
+app.get('/profile', verifyJWT, (req,res) =>{
+  res.json({ message: "Profile data", user: req.user });
 });
 
 
