@@ -1,5 +1,7 @@
 const db = require('./db');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const express = require('express');
 
@@ -8,6 +10,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/', (req,res) =>{
+    // console.log(req.headers);
     res.send('Hello World!');
 })
 
@@ -45,6 +48,38 @@ app.post('/register', async( req, res) =>{
     res.status(500).json({error: err.message});
   }
 })
+
+app.post('/login', async( req, res) =>{
+  const { email, password } = req.body;
+
+  if (!email || !password){
+    return res.status(400).json({error: "Email or password missing"});
+  }
+
+  try {
+    const [users] = await db.query('select * from users where email = ?', [email]);
+
+    const user = users[0];
+
+    if (!user){
+      return res.status(400).json({error: "Wrong email or password"});
+    }
+
+    const hashed = await bcrypt.compare(password, user.password);
+    
+    if (!hashed){
+      return res.status(400).json({error: "Wrong Password"});
+    }
+    const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '20s'});
+    res.json({ message: "Login successful", token:token });
+  }
+
+  catch (err){
+    res.status(500).json({error: err.message + ' at login'});
+  }
+
+});
+
 
 
 app.listen(3000,() => {
