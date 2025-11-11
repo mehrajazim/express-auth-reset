@@ -71,6 +71,9 @@ app.post('/login', async( req, res) =>{
       return res.status(400).json({error: "Wrong Password"});
     }
     const token = jwt.sign({ id: user.id, username: user.username, email: user.email}, process.env.JWT_SECRET, {expiresIn: '30s'});
+    const time = new Date();
+    console.log(time.toLocaleTimeString());
+    
     res.json({ message: "Login successful", token:token });
   }
 
